@@ -58,6 +58,43 @@ system from scaling arbitrarily large, but should not be an issue in any reasona
 %System Design
 \section{System Design}
 
+%Chris
+\subsection{Central IS\&T Server}
+\indent The IS\&T Server collects monitoring data, maintains a directory of access points, and keeps access points aware of their neighbors.
+\subsubsection{Monitoring}
+\indent Every hour, each Access Point will send to the Server a 33KB report that includes second-to-second user counts as an unsigned 8-bit integer, second-to-second data transfers as a 32-bit integer, second-to-second unhappiness button presses as a 32-bit integer, and a timestamp and destination for each client relocation (generously estimated at 500 bytes per report).\\
+\indent Hourly updates are infrequent enough to not contribute significantly to wired network congestion, especially if spaced out by a 5\% maximum random offset and sent at 60 minute intervals relative to AP start-up time rather than “on the hour” relative to a real time clock to avoid large network usage spikes.\\
+\indent These reports are stored in a SQL database on the Server. At the end of every week, the week’s reports are compressed for long-term storage. At the end of every year, each Access Point’s hourly reports are aggregated into monthly summaries.
+
+\subsubsection{Access Point IP Address Resolution and Location}
+\indent In order to facilitate direct communication between Access Points, the Server maintains a mapping from each Access Point’s MAC address (which acts as its unique identifier) to its IP address, physical location in absolute form (GPS coordinates), and physical location in human-readable form (room number or hallway location).\\
+\indent This IP Address information is obtained through updates sent
+by the Access Points. This is described in more detail in the next section.\\
+\indent The geographic information is used to determine Access Point
+neighbors. Access Points have the ability to query the Server for a 
+list of nearby AP's (within 500 feet). This list will later be used to
+help Clients find Access Points and enable AP's to contact each other directly over the wired network.\\
+\subsubsection{Updating IP Addresses of AP's}
+\indent Access Points inform the server of changes to their location or IP Address. The Server maintains this information in a database.\\
+\indent The Server acts as a central look-up directory, but in a fairly low-overhead and scalable way. IP address updates should be infrequent, so most of the time the neighbor lists will be static. The AP's can use their cached copies as a directory, and the wired network is not congested by constant look-up requests to the high-latency Server.\\
+\indent Neighbor-list directories should also be much smaller than the overall network directory for any reasonable access point placement scheme, and are not expected to grow as the total number of access points in the network grows, making this scheme scalable on the AP side. The directory on the server will grow linearly with the number of access points in the network.
+
+\subsection{Access Points}
+\indent Access Points perform many functions:
+\begin{enumerate}
+	\item Send performance metrics to the IS\&T server
+	\item Maintain a directory of their neighbors
+	\item Broadcast their congestion
+	\item Transfer user data to and from the Internet
+	\item Send out a heartbeat on their data channel to allow clients to discover them. 
+\end{enumerate}
+\indent Performance metrics are sent to the server on an hourly basis, as described above. The server provides each access point with a list of the locations and IP addresses of all nearby access points, and the access point caches this to use as a directory of neighbors. It can then use its neighbors’ IP addresses to contact them directly over the wired network.\\
+\indent This is superior to utilizing Channel 12 for recursive look-up of IP addresses for AP-to-AP communication, as channel switching cost make this a poor option. While latency on the server link is high, access points can still function normally while waiting on the server’s response (via the wired network), and the cached directory model has much lower latency on average than would result from contacting the server every time an access point needs information about another nearby access point.
+
+\subsubsection{Congestion Broadcast Packet}
+\indent Each Access Point broadcasts a Congestion Broadcast Packet on its data channel once per second. The CBP indicates the current congestion level of an AP and its ability to take on additional clients. This design places the initial burden of determining the least-congested, in-range AP on the Client, attempting to distribute Client load evenly without requiring any action on the network's part unless conditions merit adjusting Clients to a different Access Point.
+%/Chris
+
 %Rusch
 \subsection{Client Connections}
 
@@ -127,7 +164,10 @@ will also likely have multiple Access Points. \\
 \indent In a corridor, connections will experience high turn-over as users pass Access Points quickly while walking. Having to switch Access Points in this case
 is inevitable, as they will all eventually go out-of-range and cost the user one second to change due to the hardware. However, our design features an 
 inexpensive software-side connection process. It does not take long for our system to process a connection or find another suitable Access Point.\\
-\indent Future revisions may include the ability for Clients to monitor signal strengths, and automatically register with upcoming AP's in advance, and reserver badnwidth there.
+\indent Future revisions may include the ability for Clients to monitor signal strengths, and automatically register with upcoming AP's in advance, and reserve bandwidth there.
+
+\section{Conclusion}
+\indent In summary, we believe our system adds many valuable features to large-scale wireless networks. By handling congestion through the re-assignment of Clients, by collecting monitoring data, and by providing a scalable platform, 802.033 solves many issues traditionally associated with 802.11 networks. 
 \end{document}
 
 
