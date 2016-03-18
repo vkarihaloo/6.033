@@ -41,9 +41,7 @@ environments such as a college campus. It is difficult to scale, monitor, and in
 \subsubsection{Enhanced Monitoring and Diagnostics}
 \indent Because campus networks are large both in terms of users and geographic coverage, maintenance, monitoring, and diagnostics can quickly become a
 difficult task. Our system seeks to ease such burdens by incorporating an automatic monitoring system that reports detailed statistics to a central
-server for archiving. Such statistics include data on Access Point (AP) utilization, user transfers to other AP's, and user (dis)satisfaction reports.\\
-\indent Such data allows network operators to diagnose or troubleshoot issues. In the long term, it also allows them to discover and forecast trends that
-identify areas of insufficient coverage or high user dissatisfaction. Analysis of this data can guide the installation of future Access Points.
+server for archiving. Such statistics include data on Access Point (AP) utilization, user transfers to other AP's, and user (dis)satisfaction reports.
 \subsubsection{Congestion Management}
 \indent To enhance network utilization and user satisfaction, our wireless network performs congestion management. Access Points track the requested
 and actual bandwidth of each Client and can throttle connections or transfer Clients to other, less-congested Access Points as needed. In case no
@@ -63,7 +61,7 @@ system from scaling arbitrarily large, but should not be an issue in any reasona
 \indent The IS\&T Server collects monitoring data, maintains a directory of access points, and keeps access points aware of their neighbors.
 \subsubsection{Monitoring}
 \indent Every hour, each Access Point will send to the Server a 33KB report that includes second-to-second user counts as an unsigned 8-bit integer, second-to-second data transfers as a 32-bit integer, second-to-second unhappiness button presses as a 32-bit integer, and a timestamp and destination for each client relocation (generously estimated at 500 bytes per report).\\
-\indent Hourly updates are infrequent enough to not contribute significantly to wired network congestion, especially if spaced out by a 5\% maximum random offset and sent at 60 minute intervals relative to AP start-up time rather than “on the hour” relative to a real time clock to avoid large network usage spikes.\\
+\indent Hourly updates are infrequent enough to not contribute significantly to wired network congestion, especially if spaced out by a 5\% maximum random offset and sent at 60 minute intervals to avoid large network usage spikes.\\
 \indent These reports are stored in a SQL database on the Server. At the end of every week, the week’s reports are compressed for long-term storage. At the end of every year, each Access Point’s hourly reports are aggregated into monthly summaries.
 
 \subsubsection{Access Point IP Address Resolution and Location}
@@ -89,7 +87,7 @@ help Clients find Access Points and enable AP's to contact each other directly o
 	\item Send out a heartbeat on their data channel to allow clients to discover them. 
 \end{enumerate}
 \indent Performance metrics are sent to the server on an hourly basis, as described above. The server provides each access point with a list of the locations and IP addresses of all nearby access points, and the access point caches this to use as a directory of neighbors. It can then use its neighbors’ IP addresses to contact them directly over the wired network.\\
-\indent This is superior to utilizing Channel 12 for recursive look-up of IP addresses for AP-to-AP communication, as channel switching cost make this a poor option. While latency on the server link is high, access points can still function normally while waiting on the server’s response (via the wired network), and the cached directory model has much lower latency on average than would result from contacting the server every time an access point needs information about another nearby access point.
+\indent This is superior to utilizing Channel 12 for communication, as channel switching costs make this an expensive option. Access points do not need to disrupt their data channel activities to use the wired network.
 
 \subsubsection{Congestion Broadcast Packet}
 \indent Each Access Point broadcasts a Congestion Broadcast Packet on its data channel once per second. The CBP indicates the current congestion level of an AP and its ability to take on additional clients. This design places the initial burden of determining the least-congested, in-range AP on the Client, attempting to distribute Client load evenly without requiring any action on the network's part unless conditions merit adjusting Clients to a different Access Point.
@@ -138,8 +136,7 @@ When adjustment needs to happen, the AP knows which other AP's each client sees 
 Request Packet. Thus, the AP can contact those AP's and query whether they can support this Client. If so, the 
 Client is transferred as done before in the previous section. If none of the AP's within range of the Client 
 are able to take the user, the user will have their bandwidth throttled to re-distribute available bandwidth. If the user 
-reports unhappiness through the Client after being throttled, the AP will query the AP's in its neighbor list and direct 
-the client to the closest suitable AP.
+reports unhappiness through the Client after being throttled, the AP will find a new AP within 500 feet, as before. 
 %/Rusch
 
 \subsection{Use Cases}
@@ -149,7 +146,7 @@ We considered several use cases during the design of this system.
 and suitable Access Points within wireless range using the heartbeat and congestion broadcasts. The Access Point will accept the connection directly, and the 
 Client gets connected to the Internet.\\
 \indent However, should congestion arise in the future, the Access Point already knows which other AP's this Client can see. This makes it easy for the AP to
-shed this user to another AP visible to the user.
+shed this Client to another already-visible AP.
 \subsubsection{Lecture Hall}
 \indent In this use case, a large number of students quickly enter a lecture hall. The system must be able to quickly establish many connections. Such a location
 will also likely have multiple Access Points. \\
@@ -164,7 +161,7 @@ will also likely have multiple Access Points. \\
 \indent In a corridor, connections will experience high turn-over as users pass Access Points quickly while walking. Having to switch Access Points in this case
 is inevitable, as they will all eventually go out-of-range and cost the user one second to change due to the hardware. However, our design features an 
 inexpensive software-side connection process. It does not take long for our system to process a connection or find another suitable Access Point.\\
-\indent Future revisions may include the ability for Clients to monitor signal strengths, and automatically register with upcoming AP's in advance, and reserve bandwidth there.
+\indent Future revisions may include the ability for Clients to monitor signal strengths, and automatically register with upcoming AP's in advance and reserve bandwidth there.
 
 \section{Conclusion}
 \indent In summary, we believe our system adds many valuable features to large-scale wireless networks. By handling congestion through the re-assignment of Clients, by collecting monitoring data, and by providing a scalable platform, 802.033 solves many issues traditionally associated with 802.11 networks. 
