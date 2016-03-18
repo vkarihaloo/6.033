@@ -1,0 +1,54 @@
+\documentclass{article}
+\usepackage[utf8]{inputenc}
+
+\title{6.036}
+\author{Rusch}
+\date{March 2016}
+
+\begin{document}
+
+\section{Client Connecting Process}
+
+[TODO Some of these communications may require specific packets]
+
+[TODO present vs future tense]
+
+[CBPs should be well specified in previous section]
+\\
+\\
+\indent
+The process for connecting clients to AP's is designed to quickly connect the client to an AP that can provide sufficient bandwidth for the client. 
+\\
+\\
+\indent
+When the client first starts or when it needs to reconnect to the wireless network, the client briefly listens for two types of packets (1) heartbeat packets to determine AP's in range and the data channel that those AP's are using and (2) congestion broadcast packets sent out by each AP designating the congestion of that AP, as specified in [previous section]
+\\
+\\
+\indent
+The client, using the information from the congestion broadcast packets, then communicates with the the least congested AP via its data channel. [TODO Footnote: Signal strength is not considered when choosing a connection as it does not affect the connection as stated in the project description] In the case that all AP's are entirely congested, the client connects to the AP with the greatest signal strength.
+\\
+\\
+\indent
+Once connected, the client sends a connection request packet (CRP) to the AP over its data channel that includes (1) a list of all visible AP's by MAC address and (2) the client's requested throughput. 
+\\
+\\
+\indent
+The AP receives the CRP and then determines if it possess sufficient bandwidth for the throughput requested by the client. If it does, the AP establishes a connection and links the client to the Internet. If it does not, the AP will query the other visible AP's listed in the CRP over the wired network to see if they have space for the client. [See previous section for why it has IPs] If another AP has space, the AP will request that the other AP reserves space for the client and then will tell the client to connect to the other AP. Space is explicitly reserved for the client to prevent the race condition where multiple AP's direct clients to an AP that possesses space for only one more client. 
+\\
+\\
+\indent
+If none of the access points visible to the client are able to take the client's connection, the AP, communicating over the wired network, will [sequentially] ask blocks of neighbors within 500 ft [TODO reference back to AP having these lists cached] that are not visible to the client, from closest to furthest, if they are able handle the bandwidth requested by the client. The AP will then direct the client to the closest AP capable of handling the requested bandwidth. The AP will request the other AP to reserve space for the client. Then the client will be directed to the other AP, by being given the building number and room number of that AP. As the client will have some transit time when moving to the range of the other AP, the other AP could still use that reserved amount of bandwidth for some amount of time. In addition, since the client may decide not to move to the other AP, the space will only be reserved for some amount of time, after which it will become available again.
+
+\section{Adjusting Clients}
+\\
+\indent
+As the load on a particular access point increases sharply, such that the AP may shortly overload, the AP must re-adjust its load. This load may be the AP approaching its bandwidth max, client max, or both. Clients using the most bandwidth are the first to be adjusted, as affecting one large user causes less unhappiness than affecting 20 smaller users. 
+\\
+\\
+\indent
+When adjustment needs to happen, the AP knows which other AP's each client sees as the list of visible AP's was reported the client in the Connection Request Packet. [Previous section] Thus, the AP can contact those AP's that the client to query whether they can take on the client. If so, the client is transferred as done in the previous process [the same as the initial adding, reference back] If none of the AP's within range of the client are able to take the user, the user will have their bandwidth throttled by some factor to increase bandwidth available for the AP. If the user reports unhappiness after being throttled, the AP will query the AP's in its neighbor list that are not not within range of the client and direct the client to the closest suitable AP, if possible, [as was done in the previous section]
+\\
+\\
+[Extra section on moving around small bandwidth users]
+
+\end{document}
